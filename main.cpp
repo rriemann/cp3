@@ -46,10 +46,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    vector vektor = malloc_vector(L);
+    vector x = malloc_vector(L);
     vector b = malloc_vector(L);
     for (int i = 0; i < L; i++) {
-        vektor[i] = ran->Uniform();
+        x[i] = ran->Uniform();
         b[i] = ran->Uniform();
     }
     delete ran;
@@ -64,12 +64,16 @@ int main(int argc, char *argv[]) {
     free_vector(result);
     */
 
-    vector result = cg(L, feld, vektor, b, field_vector, 10E-8, 1000, false);
+    int max_iterations = L*3;
+    double tolerance = 1E-10;
+    vector result = NULL;
+    result = cg(L, feld, x,      b, field_vector, tolerance, max_iterations, false);
+    result = cg(L, feld, result, b, field_vector, tolerance, max_iterations, true);
     print_vector(result, L);
 
     free_vector(b);
     free_field(feld);
-    free_vector(vektor);
+    free_vector(x);
     return 0;
 }
 
@@ -84,56 +88,61 @@ void free_vector(vector vektor) {
 }
 
 vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int), double tolerance, int max_iterations, bool flag) {
-    vector r0 = malloc_vector(L);
-    vector x0 = malloc_vector(L);
+    vector r = malloc_vector(L);
+    vector p = malloc_vector(L);
+    vector s = NULL;
+    double bb = dot_product(b, b, L);
+    double rr_tol = bb * tolerance*tolerance;
+    double rr;
+
     if (flag) {
+        s = func(A,x,L);
+        rr = 0;
         for (int i = 0; i < L; i++)
-            x0[i] = 0;
-        r0 = b;
+            r[i] = b[i] - s[i];
+        rr = dot_product(r, r, L);
     } else {
-        r0 = func(A, x, L);
         for (int i = 0; i < L; i++) {
-            r0[i] = b[i] - r0[i];
+            x[i] = 0;
+            r[i] = b[i];
+        }
+        rr = bb;
+    }
+
+    cout << "iter = " << 0 << "   rr = " << rr << endl;
+    if (rr > rr_tol) {
+
+        for(int i = 0; i < L; i++) {
+            p[i] = r[i];
+        }
+
+        double alpha;
+        for (int iteration = 0; iteration < max_iterations; iteration++) {
+            free_vector(s);
+            s = field_vector(A, p, L);
+            alpha = rr/dot_product(p, s, L);
+            for (int i = 0; i < L; i++) {
+                x[i] += alpha*p[i];
+                r[i] -= alpha*s[i];
+            }
+            double rr_old = rr;
+            rr = dot_product(r, r, L);
+            cout << "iter = " << iteration << "   rr = " << rr << endl;
+            if (rr <= tolerance)
+                break;
+
+            double beta = rr/rr_old;
+            for (int i = 0; i < L; i++) {
+                p[i] = r[i]+beta*p[i];
+            }
         }
     }
 
-    double r02 = dot_product(r0, r0, L);
-    if (r02 < tolerance)
-        return r0;
+    free_vector(p);
+    free_vector(r);
+    free_vector(s);
 
-    vector p0 = malloc_vector(L);
-    for (int i = 0; i < L; i++) {
-        p0[i] = r0[i];
-    }
-
-    vector s;
-    vector x1 = malloc_vector(L);
-    vector r1 = malloc_vector(L);
-    double alpha;
-    for (int iteration = 0; iteration < max_iterations; iteration++) {
-        s = field_vector(A, p0, L);
-        alpha = dot_product(p0, r0, L)/dot_product(p0, s, L);
-        for (int i = 0; i < L; i++) {
-            x1[i] = x0[i]+alpha*p0[i];
-            r1[i] = r0[i]-alpha*s[i];
-        }
-        double r12 = dot_product(r1, r1, L);
-        if (r12 < tolerance)
-            return r1;
-
-        double beta = r12/r02;
-        for (int i = 0; i < L; i++) {
-            p0[i] = r1[i]+beta*p0[i];
-            r0[i] = r1[i];
-        }
-        free_vector(s);
-    }
-
-    free_vector(x1);
-    free_vector(r1);
-
-    if (!flag) free_vector(r0);
-    return r1;
+    return x;
 }
 
 vector field_vector(field feld, vector vektor, int L) {
