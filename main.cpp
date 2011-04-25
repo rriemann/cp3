@@ -25,7 +25,7 @@ vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int),
 void print_vector(vector v, int L);
 void print_matrix(field f, int L);
 
-const int L = 2;
+const int L = 3;
 
 int main(int argc, char *argv[]) {
 
@@ -38,10 +38,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < L2; i++) {
         feld[0][i] = ran->Uniform();
     }
-    feld[0][0] = 0.211322;
-    feld[0][1] = 0.876808;
-    feld[1][0] = 0.931371;
-    feld[1][1] = 0.463767;
 
     // make matrix feld non-singular: M = (M+M^t)/2
     field feld2 = malloc_field(L);
@@ -52,6 +48,7 @@ int main(int argc, char *argv[]) {
                 feld2[i][j] += (feld[i][k]*feld[j][k]);
         }
     }
+    free_field(feld);
 
     vector x = malloc_vector(L);
     vector b = malloc_vector(L);
@@ -60,9 +57,6 @@ int main(int argc, char *argv[]) {
         b[i] = ran->Uniform();
     }
     delete ran;
-
-    b[0] = 0.716600;
-    b[1] = 0.086319;
 
     /*
     print_vector(vektor, L);
@@ -83,7 +77,6 @@ int main(int argc, char *argv[]) {
     print_vector(result, L);
 
     free_vector(b);
-    free_field(feld);
     free_field(feld2);
     free_vector(x);
     return 0;
@@ -148,7 +141,8 @@ vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int),
                 p[i] = r[i]+beta*p[i];
             }
         }
-        cerr << "error in cg: no convergence" << endl;
+        if(rr > tolerance)
+            cerr << "error in cg: no convergence" << endl;
     }
 
     free_vector(p);
