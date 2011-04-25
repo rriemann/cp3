@@ -25,7 +25,7 @@ vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int),
 void print_vector(vector v, int L);
 void print_matrix(field f, int L);
 
-const int L = 4;
+const int L = 3;
 
 int main(int argc, char *argv[]) {
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
     // assign random numbers between 0 and 1 to matrix feld
     const int L2 = L*L;
-    TRandom3 *ran = new TRandom3(0);
+    TRandom3 *ran = new TRandom3();
     for (int i = 0; i < L2; i++) {
         feld[0][i] = ran->Uniform();
     }
@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
     double tolerance = 1E-10;
     vector result = NULL;
     result = cg(L, feld, x,      b, field_vector, tolerance, max_iterations, false);
+    print_vector(result, L);
     result = cg(L, feld, result, b, field_vector, tolerance, max_iterations, true);
     print_vector(result, L);
 
@@ -136,6 +137,7 @@ vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int),
                 p[i] = r[i]+beta*p[i];
             }
         }
+        cerr << "error in cg: no convergence" << endl;
     }
 
     free_vector(p);
