@@ -5,7 +5,9 @@ LDLIBS=`root-config --libs`
 
 all:	main
 
+main:	geom_pbc.o
+
 clean:
-	rm -f main main.o
+	rm -f main main.o geom_pbc.o
 
 .PHONY:	clean

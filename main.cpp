@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <TRandom3.h>
+#include "geom_pbc.h"
+
 
 using std::string;
 using std::cout;
@@ -13,50 +15,37 @@ using std::endl;
 typedef double field_type;
 typedef field_type **field;
 typedef field_type  *vector;
-field malloc_field(int L);
-inline vector malloc_vector(int L) {
-    return (vector)malloc(L * sizeof(field_type));
-}
 void free_vector(vector vektor);
 void free_field(field feld);
 vector field_vector(field feld, vector vektor, int L);
 double dot_product(vector u, vector v, int L);
-vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int), double tolerance, int max_iterations, bool flag);
+void cg(int L, vector x, vector b, void (func)(vector, double, vector), double tolerance, int max_iterations, bool flag);
 void print_vector(vector v, int L);
 void print_matrix(field f, int L);
 
-const int L = 3;
+const int L = 8;
+int ndim = 3;
+int *lsize;
+int nvol, **nn;
 
 int main(int argc, char *argv[]) {
 
-    field feld;
-    feld = malloc_field(L);
+    lsize = (int*)malloc(ndim*sizeof(int));
+    for(int i = 0; i < ndim; i++)
+      lsize[i] = L;
+    geom_pbc(); // assign nn[][] and nvol
 
-    // assign random numbers between 0 and 1 to matrix feld
-    const int L2 = L*L;
+    field_type eta[nvol];
+    field_type phi[nvol];
+
+    // assign random numbers between 0 and 1
     TRandom3 *ran = new TRandom3();
-    for (int i = 0; i < L2; i++) {
-        feld[0][i] = ran->Uniform();
-    }
-
-    // make matrix feld non-singular: M = (M+M^t)/2
-    field feld2 = malloc_field(L);
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < L; j++) {
-            feld2[i][j] = 0;
-            for(int k = 0; k < L; k++)
-                feld2[i][j] += (feld[i][k]*feld[j][k]);
-        }
-    }
-    free_field(feld);
-
-    vector x = malloc_vector(L);
-    vector b = malloc_vector(L);
-    for (int i = 0; i < L; i++) {
-        x[i] = ran->Uniform();
-        b[i] = ran->Uniform();
+    for (int i = 0; i < nvol; i++) {
+        eta[i] = ran->Uniform();
     }
     delete ran;
+
+    result = cg(nvol, x, b, laplace, tolerance, max_iterations, false);
 
     /*
     print_vector(vektor, L);
@@ -66,7 +55,6 @@ int main(int argc, char *argv[]) {
     print_vector(result, L);
 
     free_vector(result);
-    */
 
     int max_iterations = L*3;
     double tolerance = 1E-10;
@@ -77,25 +65,24 @@ int main(int argc, char *argv[]) {
     print_vector(result, L);
 
     free_vector(b);
-    free_field(feld2);
     free_vector(x);
+    */
+
+    free(lsize);
     return 0;
 }
 
-void free_field(field feld) {
-    free_vector(feld[0]);
-    free(feld);
-    feld = NULL;
-}
-void free_vector(vector vektor) {
-    free(vektor);
-    vektor = NULL;
+void laplace(vector x, double m2, vector result){
+  for(int i = 0; i < nvol; ++i){
+    result[i] = (2*ndim + m2)*x[i];
+    for(int j = 1; j <= ndim; ++j){
+      result[i] -= x[nn[j][i]] + x[nn[ndim+j][i]];
+    }
+  }
 }
 
-vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int), double tolerance, int max_iterations, bool flag) {
-    vector r = malloc_vector(L);
-    vector p = malloc_vector(L);
-    vector s = NULL;
+void cg(int nvol, vector x, vector b, void (func)(vector, double m2, vector), double tolerance, int max_iterations, bool flag) {
+    field_type r[nvol], p[nvol], s[nvol];
     double bb = dot_product(b, b, L);
     double rr_tol = bb * tolerance*tolerance;
     double rr;
@@ -123,8 +110,7 @@ vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int),
 
         double alpha;
         for (int iteration = 1; iteration < max_iterations; iteration++) {
-            free_vector(s);
-            s = field_vector(A, p, L);
+            func(p, m2, s);
             alpha = rr/dot_product(p, s, L);
             for (int i = 0; i < L; i++) {
                 x[i] += alpha*p[i];
@@ -144,25 +130,6 @@ vector cg(int L, field A, vector x, vector b, vector (func)(field, vector, int),
         if(rr > tolerance)
             cerr << "error in cg: no convergence" << endl;
     }
-
-    free_vector(p);
-    free_vector(r);
-    free_vector(s);
-
-    return x;
-}
-
-vector field_vector(field feld, vector vektor, int L) {
-    vector result = malloc_vector(L);
-
-    for (int i = 0; i < L; i++) {
-        result[i] = 0;
-        for (int j = 0; j < L; j++) {
-            result[i] += feld[i][j]*vektor[j];
-        }
-    }
-
-    return result;
 }
 
 void print_vector(vector v, int L) {
@@ -186,17 +153,4 @@ double dot_product(vector u, vector v, int L) {
         sum += u[i]*v[i];
     }
     return sum;
-}
-
-field malloc_field(int L)
-{
-    field feld = (field)malloc(L * sizeof(field_type*));
-    feld[0] = malloc_vector(L*L);
-    if (feld[0] == NULL) {
-        cerr << "Not enough memory for allocating field" << endl;
-        exit(1);
-    }
-    for (int i = 1; i < L; i++)
-        feld[i] = feld[0] + L * i;
-    return feld;
 }
