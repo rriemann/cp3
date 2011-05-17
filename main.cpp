@@ -6,7 +6,6 @@
 #include <TRandom3.h>
 #include "geom_pbc.h"
 
-
 using std::string;
 using std::cout;
 using std::cerr;
@@ -20,8 +19,6 @@ void free_field(field feld);
 vector field_vector(field feld, vector vektor, int L);
 double dot_product(vector u, vector v, int L);
 void cg(vector x, vector b, void (func)(vector, vector), double tolerance, int max_iterations, bool flag);
-void print_vector(vector v, int L);
-void print_matrix(field f, int L);
 void laplace(vector x, vector result);
 
 const int L = 8;
@@ -52,30 +49,8 @@ int main(int argc, char *argv[]) {
     }
     delete ran;
 
-    // field_type x[nvol], b[nvol];
-
     cg(phi, eta, laplace, tolerance, max_iterations, false);
 
-    /*
-    print_vector(vektor, L);
-    print_matrix(feld, L);
-
-    vector result = field_vector(feld, vektor);
-    print_vector(result, L);
-
-    free_vector(result);
-
-    int max_iterations = L*3;
-    double tolerance = 1E-10;
-    vector result = NULL;
-    result = cg(L, feld2, x,      b, field_vector, tolerance, max_iterations, false);
-    print_vector(result, L);
-    result = cg(L, feld2, result, b, field_vector, tolerance, max_iterations, true);
-    print_vector(result, L);
-
-    free_vector(b);
-    free_vector(x);
-    */
 
     free(lsize);
     return 0;
@@ -139,21 +114,6 @@ void cg(vector x, vector b, void (func)(vector, vector), double tolerance, int m
         }
         if(rr > tolerance)
             cerr << "error in cg: no convergence" << endl;
-    }
-}
-
-void print_vector(vector v, int L) {
-    for (int i = 0; i < L; i++) {
-        cout << v[i] << endl;
-    }
-}
-
-void print_matrix(field f, int L) {
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < L; j++) {
-            cout << f[i][j] << " ";
-        }
-        cout << endl;
     }
 }
 
