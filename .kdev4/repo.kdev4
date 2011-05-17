@@ -1,0 +1,32 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x08\x00r\x00e\x00p\x00o)
+
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=Neue Konfiguration für Native Anwendung
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Arguments=
+Debugger Shell=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00\x08\x00r\x00e\x00p\x00o\x00\x00\x00\x06\x00a\x00l\x00l)
+Dependency Action=Build
+Display Demangle Names=true
+Display Static Members=false
+EnvironmentGroup=default
+Executable=file:///home/rriemann/Documents/Studium/cp3/repo/main
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+GDB Path=
+Remote GDB Config Script=
+Remote GDB Run Script=
+Remote GDB Shell Script=
+Use External Terminal=false
+Working Directory=file:///home/rriemann/Documents/Studium/cp3/repo/
+isExecutable=true
+
+[Project]
+VersionControlSupport=kdevgit

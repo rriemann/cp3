@@ -19,33 +19,42 @@ void free_vector(vector vektor);
 void free_field(field feld);
 vector field_vector(field feld, vector vektor, int L);
 double dot_product(vector u, vector v, int L);
-void cg(int L, vector x, vector b, void (func)(vector, double, vector), double tolerance, int max_iterations, bool flag);
+void cg(vector x, vector b, void (func)(vector, vector), double tolerance, int max_iterations, bool flag);
 void print_vector(vector v, int L);
 void print_matrix(field f, int L);
+void laplace(vector x, vector result);
 
 const int L = 8;
 int ndim = 3;
-int *lsize;
-int nvol, **nn;
+int *lsize, nvol, **nn;
+
+const int max_iterations = 3*ndim;
+const double tolerance = 1e-10;
+const double m2 = 1.0;
 
 int main(int argc, char *argv[]) {
 
-    lsize = (int*)malloc(ndim*sizeof(int));
-    for(int i = 0; i < ndim; i++)
+    lsize = (int*)malloc((1+ndim)*sizeof(int));
+    for(int i = 1; i <= ndim; i++)
       lsize[i] = L;
-    geom_pbc(); // assign nn[][] and nvol
 
+    geom_pbc(); // assign nn[][] and nvol
+    
     field_type eta[nvol];
     field_type phi[nvol];
 
     // assign random numbers between 0 and 1
-    TRandom3 *ran = new TRandom3();
+
+    TRandom3 *ran = new TRandom3(0);
+
     for (int i = 0; i < nvol; i++) {
         eta[i] = ran->Uniform();
     }
     delete ran;
 
-    result = cg(nvol, x, b, laplace, tolerance, max_iterations, false);
+    // field_type x[nvol], b[nvol];
+
+    cg(phi, eta, laplace, tolerance, max_iterations, false);
 
     /*
     print_vector(vektor, L);
@@ -72,7 +81,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void laplace(vector x, double m2, vector result){
+void laplace(vector x, vector result){
   for(int i = 0; i < nvol; ++i){
     result[i] = (2*ndim + m2)*x[i];
     for(int j = 1; j <= ndim; ++j){
@@ -81,14 +90,15 @@ void laplace(vector x, double m2, vector result){
   }
 }
 
-void cg(int nvol, vector x, vector b, void (func)(vector, double m2, vector), double tolerance, int max_iterations, bool flag) {
+
+void cg(vector x, vector b, void (func)(vector, vector), double tolerance, int max_iterations, bool flag) {
     field_type r[nvol], p[nvol], s[nvol];
     double bb = dot_product(b, b, L);
     double rr_tol = bb * tolerance*tolerance;
     double rr;
 
     if (flag) {
-        s = func(A,x,L);
+        func(x, s);
         rr = 0;
         for (int i = 0; i < L; i++)
             r[i] = b[i] - s[i];
@@ -110,7 +120,7 @@ void cg(int nvol, vector x, vector b, void (func)(vector, double m2, vector), do
 
         double alpha;
         for (int iteration = 1; iteration < max_iterations; iteration++) {
-            func(p, m2, s);
+            func(p, s);
             alpha = rr/dot_product(p, s, L);
             for (int i = 0; i < L; i++) {
                 x[i] += alpha*p[i];
